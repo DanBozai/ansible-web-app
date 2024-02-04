@@ -1,0 +1,24 @@
+events {
+    worker_connections 1024;
+}
+
+http {
+    include mime.types;
+
+    upstream backendServers {
+        {% for i in backend_servers %}
+        server {{ hostvars[i]['ansible_host'] }};
+        {% endfor %}
+        
+    }
+
+    server {
+        listen 80;
+
+        location / {
+            proxy_pass http://backendServers/;
+          
+        }
+    }
+
+}

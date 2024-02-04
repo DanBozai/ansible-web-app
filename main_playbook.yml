@@ -1,0 +1,166 @@
+---
+- name: Install Node.js, npm, and Copy Express app
+  hosts: frontend_servers:backend_servers
+  become: yes
+  tasks:
+    - name: Install nodejs and npm
+      apt:
+        name: 
+          - nodejs
+          - npm
+          - authbind
+        state: present
+
+
+- name: Build, configure environment, deploy Express server application
+  hosts: backend_servers
+  become: yes
+  tasks:
+    - name: Create express user with no shell
+      user:
+        name: "{{ express_user_name }}"
+        system: yes
+        createhome: no
+        shell: /bin/false
+    - name: Create directory
+      file:
+        path: "{{ express_source_dir_path }}/{{ express_source_dir_name }}"
+        state: directory
+    - name: Copy
+      copy:
+        src: "./files/{{ local_express_source_files_dir }}"
+        dest: "{{ express_source_dir_path }}/{{ express_source_dir_name }}"
+
+    - name: Change directory to express source files and run npm ci
+      shell: |
+        cd "{{ express_source_dir_path }}/{{ express_source_dir_name }}/{{ local_express_source_files_dir }}"
+        npm ci
+        npm run build:prod
+
+    - name: Copy express.service file
+      template:
+        src: ./files/templates/express.service.j2
+        dest: "/etc/systemd/system/{{ express_service_name }}"
+
+    - name: Copy express build and conf authbind 
+      shell: |
+        cp -r "{{ express_source_dir_path }}/{{ express_source_dir_name }}/{{ local_express_source_files_dir }}/{{ express_build_name }}" "{{ express_build_deploy_path }}"
+        chown -R "{{ express_user_name }}:{{ express_user_name }}" "{{ express_build_deploy_path }}/{{ express_build_name }}"
+        touch /etc/authbind/byport/80
+        chown "{{ express_user_name }}:{{ express_user_name }}" /etc/authbind/byport/80
+        chmod 500 /etc/authbind/byport/80
+        systemctl daemon-reload
+
+    - name: Copy express.conf
+      copy:
+        src: "./files/{{ local_express_source_files_dir }}/express.conf"
+        dest: /etc
+        owner: "{{ express_user_name }}"
+        group: "{{ express_user_name }}"
+        mode: '0400'
+
+    - name: Restart, enable service express
+      service:
+        name: "{{ express_service_name }}"
+        daemon_reload: true
+        enabled: yes
+        state: restarted
+
+
+- name: Install and configure nginx BACKEND_LOAD_BALANCER  
+  hosts: backend_load_balancer
+  become: yes
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Copy nginx.conf [BLB]
+      template:
+        src: ./files/templates/backend_nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        mode: '0644'
+      vars:
+        backend_servers: "{{ groups['backend_servers'] }}"
+    - name: restart nginx service
+      service:
+        name: nginx
+        daemon_reload: true
+        state: restarted
+        enabled: yes
+
+- name: Copy, build, configure environment, deploy Express server application
+  hosts: frontend_servers
+  become: yes
+  tasks:
+    - name: Create react user with no shell
+      user:
+        name: "{{ react_user_name }}"
+        system: yes
+        createhome: no
+        shell: /bin/false
+
+    - name: Create directory
+      file:
+        path: "{{ react_source_dir_path }}/{{ react_source_dir_name }}"
+        state: directory
+    - name: Copy react source files
+      copy:
+        src: ./files/react
+        dest: "{{ react_source_dir_path }}/{{ react_source_dir_name }}"
+    - name: Copy react environment file
+      template:
+        src: ./files/templates/react_env.j2
+        dest: "{{ react_source_dir_path }}/{{ react_source_dir_name }}/react/.env"
+        mode: '0644'
+    - name: Copy react.service systemd file 
+      template:
+        src: ./files/templates/react.service.j2
+        dest: "/etc/systemd/system/{{ react_service_name }}"  
+
+    - name: Change directory to react source files and run npm ci, npm run build, conf authbind
+      shell: |
+        cd "{{ react_source_dir_path }}/{{ react_source_dir_name }}/{{ local_express_source_files_dir }}"
+        npm ci
+        npm run build
+        npm install -g serve
+        cp -r "{{ react_source_dir_path }}/{{ react_source_dir_name }}/{{ local_express_source_files_dir }}/{{ react_build_name }}" "{{ react_build_deploy_path }}"
+        mv "{{ react_build_deploy_path }}/{{ react_build_name }}" "{{ react_build_deploy_path }}/{{ react_app_deploy_dir_name }}"
+        chown -R "{{ react_user_name }}:{{ react_user_name }}" "{{ react_build_deploy_path }}/{{ react_app_deploy_dir_name }}"
+        touch /etc/authbind/byport/80
+        chown "{{ react_user_name }}:{{ react_user_name }}" /etc/authbind/byport/80
+        chmod 500 /etc/authbind/byport/80
+        systemctl daemon-reload
+
+    - name: Restart, enable react.service
+      service:
+        name: "{{ react_service_name }}" 
+        daemon_reload: true
+        state: restarted
+        enabled: yes
+
+      
+- name: Install and configure nginx FRONTEND_LOAD_BALANCER  
+  hosts: frontend_load_balancer
+  become: yes
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Copy nginx.conf [FLB]
+      template:
+        src: ./files/templates/frontend_nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+        mode: '0644'
+      vars:
+        frontend_servers: "{{ groups['frontend_servers'] }}"
+
+    - name: Restart,enable nginx service
+      service:
+        name: nginx
+        daemon_reload: true
+        state: restarted
+        enabled: yes

@@ -1,0 +1,10 @@
+[Unit]
+Description=express backend server
+
+[Service]
+User={{ express_user_name }}
+Restart=always
+ExecStart=/usr/bin/authbind --deep /usr/bin/node {{ express_build_deploy_path }}/{{ express_build_name }}/{{ express_app_deploy_name }}.js
+
+[Install]
+WantedBy=multi-user.target

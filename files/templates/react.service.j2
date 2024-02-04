@@ -1,0 +1,10 @@
+[Unit]
+Description=express backend server
+
+[Service]
+User={{ react_user_name }}
+Restart=always
+ExecStart=/usr/bin/authbind --deep  /usr/local/bin/serve -s {{ react_build_deploy_path }}/{{ react_app_deploy_dir_name }} -l 80
+
+[Install]
+WantedBy=multi-user.target
