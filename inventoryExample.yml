@@ -1,0 +1,76 @@
+[all:vars]
+#server user
+ansible_user=
+#path to ssh private key
+ansible_ssh_private_key_file=
+
+
+#############################################################################################################################################################
+[backend_servers:vars]
+local_express_source_files_dir=express
+
+#create user /bin/false
+express_user_name=
+
+
+#path to copy express source files and build execution 
+express_source_dir_path=
+
+#create new directory
+express_source_dir_name=
+
+#path to mv build files
+express_build_deploy_path=
+
+#### this variable must match the output webpack.prod.js build script 
+express_build_name=prod_build
+
+#### this variable must match the output filename webpack.prod.js build script
+express_app_deploy_name=prod_main
+
+#name to create a new systemd service for the express application (exemple: expres.service)
+express_service_name=
+
+
+#############################################################################################################################################################
+[frontend_servers:vars]
+#create user /bin/false
+react_user_name=
+
+local_express_source_files_dir=react
+
+#path to copy react source files and build execution 
+react_source_dir_path=
+
+# backend url, react_env.j2 (react environment variable)
+backend_api_url=
+
+
+#create new directory to mv the source files
+react_source_dir_name=
+#build execution output directory name 
+react_build_name=build
+
+#react deploy build output path
+react_build_deploy_path=
+
+#change the name of the directory after mv the build files 
+react_app_deploy_dir_name=
+#name to create a new systemd service for the react application (exemple: react.service)
+react_service_name=
+
+
+#############################################################################################################################################################
+[backend_servers]
+bs1 ansible_host=
+bs2 ansible_host=
+
+[frontend_servers]
+fs1 ansible_host= 
+fs2 ansible_host= 
+
+[backend_load_balancer]
+blb ansible_host=
+
+[frontend_load_balancer]
+flb ansible_host=
