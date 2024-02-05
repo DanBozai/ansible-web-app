@@ -17,6 +17,7 @@ Build and deploy express, react source files to a linux server with systemd and 
 
 #### Additional information
 - for the step 2 and 4 Ansible create an unprivileged user "/bin/false" and run the server application with authbind (for more detailed information about authbind, check [this link](https://manpages.ubuntu.com/manpages/xenial/man1/authbind.1.html) and [wiki](https://en.wikipedia.org/wiki/Authbind)).
+- this ansible playbook is designed to run on Linux that use apt package manager, tested on Debian bookworm
 
 Usage:
 1. install Ansible [guide installation](https://docs.ansible.com/ansible/latest/installation_guide/intro_installation.html);
