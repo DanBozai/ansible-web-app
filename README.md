@@ -1,8 +1,19 @@
 # Web application deployment with Ansible 
-Stack:
+Build and deploy express, react source files to a linux server with systemd and configure nginx load balancer.
+## Stack:
 - Express
 - React
 - Nginx
-
   
 ![project](https://github.com/DanBozai/ansible-web-app/assets/123987852/fb1c75da-9499-44ff-855a-154373952984)
+
+
+### main_playbook.yml Key Features :
+1. Install nodejs, npm, authbind to the servers specified in [frontend_servers], [backend_servers];
+2. Build and deploy Express app for the [backend_servers], utilizing systemd;
+3. Configure Nginx backend load blancer ;
+4. Build and deploy React app for the [frontend_servers], utilizing systemd;
+5. Configure Nginx frontend load blancer.
+
+#### Additional information
+- for the step 2 and 4 Ansible create an unprivileged user "/bin/false" and run the server application with authbind (for more detailed information about authbind, check [this link](https://manpages.ubuntu.com/manpages/xenial/man1/authbind.1.html) and [wiki](https://en.wikipedia.org/wiki/Authbind)).
